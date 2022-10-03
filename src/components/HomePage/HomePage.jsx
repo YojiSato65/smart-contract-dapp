@@ -5,13 +5,15 @@ import { Button, Modal } from 'react-bootstrap'
 export default function HomePage() {
   const [num, setNum] = useState(0)
   const [inputNum, setInputNum] = useState(0)
+  const [multiplier, setMultiplier] = useState(1)
   const [status, setStatus] = useState('')
   const abi = [
     'function store(uint256 num) public',
     'function retrieve() public view returns (uint256)',
+    'function multiply(uint256 multiplier) public',
   ]
   const provider = new ethers.providers.Web3Provider(window.ethereum)
-  const contractAddress = '0xd589E208B12597D0ebF2DBb934588dbfB4a68eec'
+  const contractAddress = '0x1e07EA6BA6E89cDBB014a6b78f686e996c46869d'
   const [show, setShow] = useState(false)
   const handleClose = () => setShow(false)
   const handleShow = () => setShow(true)
@@ -38,15 +40,20 @@ export default function HomePage() {
       try {
         const signer = provider.getSigner(result[0])
         const contract = new ethers.Contract(contractAddress, abi, signer)
-        const tx = await contract.store(inputNum)
+        const tx =
+          multiplier === 1
+            ? await contract.store(inputNum)
+            : await contract.multiply(multiplier)
         setStatus((status) => 'sent')
         await tx.wait()
         setStatus((status) => 'tx is mined!')
+        setMultiplier((prev) => 1)
         retrieveNum()
         setTimeout(handleClose, 1000)
       } catch (error) {
         console.log(error)
         setStatus((status) => 'tx is rejected!')
+        setMultiplier((prev) => 1)
         setTimeout(handleClose, 1000)
       }
     } else {
@@ -75,6 +82,17 @@ export default function HomePage() {
             }}
           />
           <button onClick={handleShow}>Update</button>
+        </form>
+        <form onSubmit={updateNum}>
+          <input
+            type="number"
+            placeholder="multiply the number"
+            value={multiplier}
+            onChange={(e) => {
+              setMultiplier(e.target.value)
+            }}
+          />
+          <button onClick={handleShow}>Multiply</button>
         </form>
         <Modal show={show} onHide={handleClose} size="xl">
           <Modal.Header closeButton>
